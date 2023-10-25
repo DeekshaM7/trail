@@ -1,225 +1,144 @@
-# Import necessary libraries
 import streamlit as st
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import LabelEncoder
+import pickle
 
-# Load your dataset
+# Load your dataset (uncomment and add your data loading logic)
 df = pd.read_csv("Finaldf-2.csv")
 
-# Feature columns
-X = df[['amt', 'lat', 'long', 'city_pop', 'gender', 'state', 'street', 'city', 'job', 'category']]
-y = df['is_fraud']
+# Load your trained models from pickle files
+with open('knn_model.pkl', 'rb') as knn_file:
+    knn_model = pickle.load(knn_file)
 
-# Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+with open('naive_bayes_model.pkl', 'rb') as nb_file:
+    nb_model = pickle.load(nb_file)
 
-# Convert data to NumPy arrays
-X_train = X_train.values
-y_train = y_train.values
+with open('logistic_regression_model.pkl', 'rb') as lr_file:
+    lr_model = pickle.load(lr_file)
 
-# Create and train your machine learning models
-knn_model = KNeighborsClassifier(n_neighbors=3)
-knn_model.fit(X_train, y_train)
+with open('random_forest_model.pkl', 'rb') as rf_file:
+    rf_model = pickle.load(rf_file)
 
-logistic_model = LogisticRegression()
-logistic_model.fit(X_train, y_train)
+# Set Streamlit page title and icon
+st.set_page_config(page_title="Fraud Detection App", page_icon="✅")
 
-nb_model = GaussianNB()
-nb_model.fit(X_train, y_train)
+# Define a function for making predictions with a selected model
+def predict_with_model(model, data):
+    prediction = model.predict(data)
+    return prediction
 
-rf_model = RandomForestClassifier()
-rf_model.fit(X_train, y_train)
-
+# Define functions for each page
 def knn_page():
-    st.title('K-Nearest Neighbors (KNN) Page')
-    
-    # Add UI elements for KNN model
-    st.write('This page uses K-Nearest Neighbors to predict fraud.')
-    
-    # Collect input features from the user
-    amt = st.slider('Transaction Amount', X['amt'].min(), X['amt'].max())
-    
-    # Collect and encode categorical features
-    gender = st.radio('Gender', list(df['gender'].unique()))
-    state = st.radio('State', list(df['state'].unique()))
-    street = st.radio('Street', list(df['street'].unique()))
-    city = st.radio('City', list(df['city'].unique()))
-    job = st.radio('Job', list(df['job'].unique()))
-    category = st.radio('Category', list(df['category'].unique()))
-    
-    # Encode categorical features
-    le = LabelEncoder()
-    gender_enc = le.fit_transform([gender])
-    state_enc = le.fit_transform([state])
-    street_enc = le.transform([street])
-    city_enc = le.transform([city])
-    job_enc = le.transform([job])
-    category_enc = le.transform([category])
+    st.title("K-Nearest Neighbors (KNN) Page")
 
-    # Create a feature array with the user's input
-    features = np.array([[amt, gender_enc[0], state_enc[0], street_enc[0], city_enc[0], job_enc[0], category_enc[0]]])
+    # Example: User inputs data for prediction
+    cc_num = st.text_input("Credit Card Number")
+    amt = st.number_input("Transaction Amount")
+    lat = st.number_input("Latitude")
+    long = st.number_input("Longitude")
+    city_pop = st.number_input("City Population")
+    gender_enc = st.number_input("Gender (0 or 1)")
+    state_enc = st.number_input("State Code")
+    street_enc = st.number_input("Street Code")
+    city_enc = st.number_input("City Code")
+    job_enc = st.number_input("Job Code")
+    category_enc = st.number_input("Category Code")
 
-    # Make predictions using the KNN model
-    prediction = knn_model.predict(features)
+    # Create a feature vector from the user input
+    user_input = np.array([cc_num, amt, lat, long, city_pop, gender_enc, state_enc, street_enc, city_enc, job_enc, category_enc]).reshape(1, -1)
 
-    predict_button = st.button("Predict")
-
-    if predict_button:
-        if prediction == 1:
-            prediction_txt = "Fraud Detected"
-        else:
-            prediction_txt = "No Fraud Detected"
-
-        # Display the prediction
-        st.write(f'The prediction is: {prediction_txt}')
+    if st.button("Predict"):
+        prediction = predict_with_model(knn_model, user_input)
+        st.write("Prediction:", prediction[0])
 
 def nb_page():
-    st.title('Gaussian Naive Bayes Page')
-    
-    # Add UI elements for Gaussian Naive Bayes model
-    st.write('This page uses Gaussian Naive Bayes to predict fraud.')
-    
-    # Collect input features from the user
-    amt = st.slider('Transaction Amount', X['amt'].min(), X['amt'].max())
-    
-    # Collect and encode categorical features
-    gender = st.radio('Gender', list(df['gender'].unique()))
-    state = st.radio('State', list(df['state'].unique()))
-    street = st.radio('Street', list(df['street'].unique()))
-    city = st.radio('City', list(df['city'].unique()))
-    job = st.radio('Job', list(df['job'].unique()))
-    category = st.radio('Category', list(df['category'].unique()))
-    
-    # Encode categorical features
-    le = LabelEncoder()
-    gender_enc = le.fit_transform([gender])
-    state_enc = le.fit_transform([state])
-    street_enc = le.transform([street])
-    city_enc = le.transform([city])
-    job_enc = le.transform([job])
-    category_enc = le.transform([category])
+    st.title("Naive Bayes Page")
 
-    # Create a feature array with the user's input
-    features = np.array([[amt, gender_enc[0], state_enc[0], street_enc[0], city_enc[0], job_enc[0], category_enc[0]]])
+    # Example: User inputs data for prediction
+    cc_num = st.text_input("Credit Card Number")
+    amt = st.number_input("Transaction Amount")
+    lat = st.number_input("Latitude")
+    long = st.number_input("Longitude")
+    city_pop = st.number_input("City Population")
+    gender_enc = st.number_input("Gender (0 or 1)")
+    state_enc = st.number_input("State Code")
+    street_enc = st.number_input("Street Code")
+    city_enc = st.number_input("City Code")
+    job_enc = st.number_input("Job Code")
+    category_enc = st.number_input("Category Code")
 
-    # Make predictions using Gaussian Naive Bayes model
-    prediction = nb_model.predict(features)
+    # Create a feature vector from the user input
+    user_input = np.array([cc_num, amt, lat, long, city_pop, gender_enc, state_enc, street_enc, city_enc, job_enc, category_enc]).reshape(1, -1)
 
-    predict_button = st.button("Predict")
-
-    if predict_button:
-        if prediction == 1:
-            prediction_txt = "Fraud Detected"
-        else:
-            prediction_txt = "No Fraud Detected"
-
-        # Display the prediction
-        st.write(f'The prediction is: {prediction_txt}')
+    if st.button("Predict"):
+        prediction = predict_with_model(nb_model, user_input)
+        st.write("Prediction:", prediction[0])
 
 def logistic_page():
-    st.title('Logistic Regression Page')
-    
-    # Add UI elements for Logistic Regression model
-    st.write('This page uses Logistic Regression to predict fraud.')
-    
-    # Collect input features from the user
-    amt = st.slider('Transaction Amount', X['amt'].min(), X['amt'].max())
-    
-    # Collect and encode categorical features
-    gender = st.radio('Gender', list(df['gender'].unique()))
-    state = st.radio('State', list(df['state'].unique()))
-    street = st.radio('Street', list(df['street'].unique()))
-    city = st.radio('City', list(df['city'].unique()))
-    job = st.radio('Job', list(df['job'].unique()))
-    category = st.radio('Category', list(df['category'].unique()))
-    
-    # Encode categorical features
-    le = LabelEncoder()
-    gender_enc = le.fit_transform([gender])
-    state_enc = le.fit_transform([state])
-    street_enc = le.transform([street])
-    city_enc = le.transform([city])
-    job_enc = le.transform([job])
-    category_enc = le.transform([category])
+    st.title("Logistic Regression Page")
 
-    # Create a feature array with the user's input
-    features = np.array([[amt, gender_enc[0], state_enc[0], street_enc[0], city_enc[0], job_enc[0], category_enc[0]]])
+    # Example: User inputs data for prediction
+    cc_num = st.text_input("Credit Card Number")
+    amt = st.number_input("Transaction Amount")
+    lat = st.number_input("Latitude")
+    long = st.number_input("Longitude")
+    city_pop = st.number_input("City Population")
+    gender_enc = st.number_input("Gender (0 or 1)")
+    state_enc = st.number_input("State Code")
+    street_enc = st.number_input("Street Code")
+    city_enc = st.number_input("City Code")
+    job_enc = st.number_input("Job Code")
+    category_enc = st.number_input("Category Code")
 
-    # Make predictions using Logistic Regression model
-    prediction = logistic_model.predict(features)
+    # Create a feature vector from the user input
+    user_input = np.array([cc_num, amt, lat, long, city_pop, gender_enc, state_enc, street_enc, city_enc, job_enc, category_enc]).reshape(1, -1)
 
-    predict_button = st.button("Predict")
-
-    if predict_button:
-        if prediction == 1:
-            prediction_txt = "Fraud Detected"
-        else:
-            prediction_txt = "No Fraud Detected"
-
-        # Display the prediction
-        st.write(f'The prediction is: {prediction_txt}')
+    if st.button("Predict"):
+        prediction = predict_with_model(lr_model, user_input)
+        st.write("Prediction:", prediction[0])
 
 def rf_page():
-    st.title('Random Forest Page')
-    
-    # Add UI elements for Random Forest model
-    st.write('This page uses Random Forest to predict fraud.')
-    
-    # Collect input features from the user
-    amt = st.slider('Transaction Amount', X['amt'].min(), X['amt'].max())
-    
-    # Collect and encode categorical features
-    gender = st.radio('Gender', list(df['gender'].unique()))
-    state = st.radio('State', list(df['state'].unique()))
-    street = st.radio('Street', list(df['street'].unique()))
-    city = st.radio('City', list(df['city'].unique()))
-    job = st.radio('Job', list(df['job'].unique()))
-    category = st.radio('Category', list(df['category'].unique()))
-    
-    # Encode categorical features
-    le = LabelEncoder()
-    gender_enc = le.fit_transform([gender])
-    state_enc = le.fit_transform([state])
-    street_enc = le.transform([street])
-    city_enc = le.transform([city])
-    job_enc = le.transform([job])
-    category_enc = le.transform([category])
+    st.title("Random Forest Classifier Page")
 
-    # Create a feature array with the user's input
-    features = np.array([[amt, gender_enc[0], state_enc[0], street_enc[0], city_enc[0], job_enc[0], category_enc[0]]])
+    # Example: User inputs data for prediction
+    cc_num = st.text_input("Credit Card Number")
+    amt = st.number_input("Transaction Amount")
+    lat = st.number_input("Latitude")
+    long = st.number_input("Longitude")
+    city_pop = st.number_input("City Population")
+    gender_enc = st.number_input("Gender (0 or 1)")
+    state_enc = st.number_input("State Code")
+    street_enc = st.number_input("Street Code")
+    city_enc = st.number_input("City Code")
+    job_enc = st.number_input("Job Code")
+    category_enc = st.number_input("Category Code")
 
-    # Make predictions using Random Forest model
-    prediction = rf_model.predict(features)
+    # Create a feature vector from the user input
+    user_input = np.array([cc_num, amt, lat, long, city_pop, gender_enc, state_enc, street_enc, city_enc, job_enc, category_enc]).reshape(1, -1)
 
-    predict_button = st.button("Predict")
+    if st.button("Predict"):
+        prediction = predict_with_model(rf_model, user_input)
+        st.write("Prediction:", prediction[0])
 
-    if predict_button:
-        if prediction == 1:
-            prediction_txt = "Fraud Detected"
-        else:
-            prediction_txt = "No Fraud Detected"
+def eda_page():
+    st.title("Exploratory Data Analysis (EDA) Page")
+    # Your EDA code, e.g., use Plotly or other visualization libraries
 
-        # Display the prediction
-        st.write(f'The prediction is: {prediction_txt}')
+# Create a sidebar navigation menu
+st.sidebar.title("Navigation")
+selected_page = st.sidebar.selectbox(
+    "Choose a page:",
+    ["EDA", "KNN", "Naive Bayes", "Logistic Regression", "Random Forest Classifier"]
+)
 
-def main():
-    st.sidebar.title('Navigation')
-    page = st.sidebar.selectbox("Choose a model:", ["KNN", "Logistic Regression", "Naive Bayes", "Random Forest"])
-
-    if page == "KNN":
-        knn_page()
-    elif page == "Logistic Regression":
-        logistic_page()
-    elif page == "Naive Bayes":
-        nb_page()
-    elif page == "Random Forest":
-        rf_page()
-
-if _name_ == '_main_':
-    main()
+# Display the selected page
+if selected_page == "EDA":
+    eda_page()
+elif selected_page == "KNN":
+    knn_page()
+elif selected_page == "Naive Bayes":
+    nb_page()
+elif selected_page == "Logistic Regression":
+    logistic_page()
+elif selected_page == "Random Forest Classifier":
+    rf_page()
